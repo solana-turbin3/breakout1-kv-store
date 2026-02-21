@@ -1,3 +1,4 @@
+use breakout1_kv_store::constants::DEFAULT_COMPACT_THRESHOLD;
 use breakout1_kv_store::Engine;
 use std::fs;
 use tempfile::NamedTempFile;
@@ -111,7 +112,7 @@ fn test_empty_value() {
 #[test]
 fn test_large_value() {
     let (mut engine, _f) = temp_engine();
-    let large_val = vec![0xABu8; 1024 * 1024];
+    let large_val = vec![0xABu8; DEFAULT_COMPACT_THRESHOLD as usize];
     engine.set(b"big".to_vec(), large_val.clone()).unwrap();
     assert_eq!(engine.get(b"big").unwrap(), Some(large_val));
 }

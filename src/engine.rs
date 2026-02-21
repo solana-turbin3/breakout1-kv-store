@@ -4,9 +4,8 @@ use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::constants::{DEFAULT_COMPACT_THRESHOLD, LEN_PREFIX_SIZE};
 use crate::types::{DataFileEntry, LogIndex};
-
-const DEFAULT_COMPACT_THRESHOLD: u64 = 1024 * 1024;
 
 pub struct Engine {
     path: PathBuf,
@@ -47,7 +46,7 @@ impl Engine {
         self.file.seek(SeekFrom::Start(0))?;
 
         loop {
-            let mut len_buf = [0u8; 8];
+            let mut len_buf = [0u8; LEN_PREFIX_SIZE as usize];
             match self.file.read_exact(&mut len_buf) {
                 Ok(_) => {}
                 Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => break,
@@ -107,7 +106,7 @@ impl Engine {
         self.file.write_all(&data)?;
         self.file.flush()?;
 
-        self.file_size += 8 + entry_len;
+        self.file_size += LEN_PREFIX_SIZE + entry_len;
 
         self.index.insert(
             key,
@@ -197,7 +196,7 @@ impl Engine {
             let new_pos = tmp_file.stream_position()?;
             tmp_file.write_all(&data)?;
 
-            new_file_size += 8 + entry_len;
+            new_file_size += LEN_PREFIX_SIZE + entry_len;
             new_index.insert(
                 key,
                 LogIndex {
