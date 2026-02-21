@@ -1,5 +1,6 @@
 use breakout1_kv_store::Engine;
 use tempfile::NamedTempFile;
+use std::fs;
 
 fn temp_engine() -> (Engine, NamedTempFile) {
     let file = NamedTempFile::new().unwrap();
@@ -131,4 +132,64 @@ fn test_many_overwrites_index_stays_correct() {
         engine.set(b"counter".to_vec(), i.to_le_bytes().to_vec()).unwrap();
     }
     assert_eq!(engine.get(b"counter").unwrap(), Some(99u32.to_le_bytes().to_vec()));
+}
+
+#[test]
+fn test_compact_live_keys_still_readable() {
+    let (mut engine, _f) = temp_engine();
+    engine.set(b"a".to_vec(), b"1".to_vec()).unwrap();
+    engine.set(b"b".to_vec(), b"2".to_vec()).unwrap();
+    engine.compact().unwrap();
+    assert_eq!(engine.get(b"a").unwrap(), Some(b"1".to_vec()));
+    assert_eq!(engine.get(b"b").unwrap(), Some(b"2".to_vec()));
+}
+
+#[test]
+fn test_compact_removes_stale_entries() {
+    let file = NamedTempFile::new().unwrap();
+    let path = file.path().to_owned();
+    let mut engine = Engine::load(&path).unwrap();
+
+    for i in 0..50u32 {
+        engine.set(b"k".to_vec(), i.to_le_bytes().to_vec()).unwrap();
+    }
+
+    let size_before = fs::metadata(&path).unwrap().len();
+    engine.compact().unwrap();
+    let size_after = fs::metadata(&path).unwrap().len();
+
+    assert!(size_after < size_before);
+    assert_eq!(engine.get(b"k").unwrap(), Some(49u32.to_le_bytes().to_vec()));
+}
+
+#[test]
+fn test_compact_drops_deleted_keys() {
+    let (mut engine, _f) = temp_engine();
+    engine.set(b"gone".to_vec(), b"bye".to_vec()).unwrap();
+    engine.del(b"gone".to_vec()).unwrap();
+    engine.compact().unwrap();
+    assert_eq!(engine.get(b"gone").unwrap(), None);
+}
+
+#[test]
+fn test_compact_empty_engine() {
+    let (mut engine, _f) = temp_engine();
+    engine.compact().unwrap();
+    assert_eq!(engine.get(b"anything").unwrap(), None);
+}
+
+#[test]
+fn test_auto_compact_triggered_by_threshold() {
+    let file = NamedTempFile::new().unwrap();
+    let path = file.path().to_owned();
+    let threshold = 512;
+    let mut engine = Engine::load_with_threshold(&path, threshold).unwrap();
+
+    for i in 0..200u32 {
+        engine.set(b"key".to_vec(), i.to_le_bytes().to_vec()).unwrap();
+    }
+
+    let size = fs::metadata(&path).unwrap().len();
+    assert!(size < threshold * 10);
+    assert_eq!(engine.get(b"key").unwrap(), Some(199u32.to_le_bytes().to_vec()));
 }
