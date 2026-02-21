@@ -1,5 +1,5 @@
-use breakout1_kv_store::constants::DEFAULT_COMPACT_THRESHOLD;
 use breakout1_kv_store::Engine;
+use breakout1_kv_store::constants::DEFAULT_COMPACT_THRESHOLD;
 use std::fs;
 use tempfile::NamedTempFile;
 
