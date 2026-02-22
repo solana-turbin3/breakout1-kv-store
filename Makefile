@@ -1,4 +1,4 @@
-.PHONY: build run test check clean fmt lint
+.PHONY: build run test check clean fmt lint bench
 
 build:
 	cargo build
@@ -17,3 +17,6 @@ clean:
 
 fmt:
 	cargo +nightly fmt --all
+
+bench:
+	cargo bench --bench engine_bench
