@@ -26,7 +26,7 @@ impl Engine {
         let path = path.as_ref().to_path_buf();
         let file = OpenOptions::new()
             .read(true)
-            .write(true)
+            .append(true)
             .create(true)
             .truncate(false)
             .open(&path)?;
@@ -112,7 +112,6 @@ impl Engine {
         let entry_len = data.len() as u64;
 
         let mut file = self.file.lock().unwrap();
-        file.seek(SeekFrom::End(0))?;
         file.write_all(&entry_len.to_le_bytes())?;
 
         let data_pos = file.stream_position()?;
@@ -156,7 +155,6 @@ impl Engine {
         let entry_len = data.len() as u64;
 
         let mut file = self.file.lock().unwrap();
-        file.seek(SeekFrom::End(0))?;
         file.write_all(&entry_len.to_le_bytes())?;
 
         file.write_all(&data)?;
@@ -255,7 +253,10 @@ impl Engine {
         let mut index = self.index.write().unwrap();
 
         std::fs::rename(&tmp_path, &self.path)?;
-        *file = OpenOptions::new().read(true).write(true).open(&self.path)?;
+        *file = OpenOptions::new()
+            .read(true)
+            .append(true)
+            .open(&self.path)?;
         *index = new_index;
         *self.file_size.lock().unwrap() = new_file_size;
 
