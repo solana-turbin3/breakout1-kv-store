@@ -12,7 +12,9 @@ A log-structured key-value store written in Rust, inspired by the Bitcask storag
 - As a user, I want to save the database to disk
 - As a user, I want to restore the database from disk
 
-## Architecture
+## Architecture Diagram
+
+![Architecture Diagram](assets/arch-diagram.png)
 
 ```
 user
