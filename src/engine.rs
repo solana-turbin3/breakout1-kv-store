@@ -25,7 +25,7 @@ impl Engine {
         let compact_threshold = Self::ensure_header(&path, DEFAULT_COMPACT_THRESHOLD)?;
         let file = OpenOptions::new()
             .read(true)
-            .write(true)
+            .append(true)
             .create(true)
             .truncate(false)
             .open(&path)?;
@@ -165,7 +165,6 @@ impl Engine {
         let entry_len = data.len() as u64;
 
         let mut file = self.file.lock().unwrap();
-        file.seek(SeekFrom::End(0))?;
         file.write_all(&entry_len.to_le_bytes())?;
 
         let data_pos = file.stream_position()?;
@@ -210,7 +209,6 @@ impl Engine {
         let entry_len = data.len() as u64;
 
         let mut file = self.file.lock().unwrap();
-        file.seek(SeekFrom::End(0))?;
         file.write_all(&entry_len.to_le_bytes())?;
 
         file.write_all(&data)?;
